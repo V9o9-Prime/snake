@@ -30,6 +30,7 @@
     // 🎵 Sound Effects
     const eatSound = new Audio("eat.mp3");
     const gameOverSound = new Audio("gameover.wav");
+    const thumpinMusic = new Audio("thumpin.mp3");
 
 
     function resizeCanvas() {
@@ -125,10 +126,15 @@
       requestAnimationFrame(gameLoop);
     }
 
-    function startGame() {
-      initGame();
-      direction = { x: 1, y: 0 };
-      gameRunning = true;
+   function startGame() {
+  initGame();
+  direction = { x: 1, y: 0 };
+  gameRunning = true;
+
+  // ▶️ Start music only when game actually begins
+  thumpinMusic.play().catch(err => console.warn("Music autoplay blocked:", err));
+}
+
     }
 
     function resetGame() {
