@@ -1,164 +1,70 @@
+<head>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      background-color: #0f2b38;
+      font-family: Arial, sans-serif;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      background-color: #111;
+      border: 2px solid #00f0ff;
+    }
+
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #scoreDisplay {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 18px;
+      z-index: 10;
+    }
+
+    button {
+      background-color: #3b4d5e;
+      color: white;
+      padding: 10px 20px;
+      border: 2px solid #00f0ff;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #50697f;
+    }
+  </style>
+</head>
 <body>
   <div id="controls">
     <button onclick="startGame()">Play Snake</button>
     <button onclick="resetGame()">Reset Game</button>
     <button onclick="toggleFullscreen()">Fullscreen</button>
   </div>
-  <div id="scoreDisplay" style="color:white; font-size:18px; margin:10px;">
+
+  <div id="scoreDisplay">
     Score: <span id="score">0</span> | High Score: <span id="highScore">0</span>
   </div>
+
   <canvas id="game"></canvas>
-
-  <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-
-    let gridSize = 20;
-    let cellSize;
-    let snake, direction, food;
-    let score = 0;
-    let highScore = localStorage.getItem("highScore") || 0;
-
-    const scoreDisplay = document.getElementById("score");
-    const highScoreDisplay = document.getElementById("highScore");
-    highScoreDisplay.textContent = highScore;
-
-    let lastUpdate = 0;
-    const snakeSpeed = 10; // moves per second
-    let gameRunning = false;
-
-    // 🎵 Sound Effects
-    const eatSound = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YRAAAAAA//8AAP//AAD//wAA//8AAP//AAD//wAA");
-    const gameOverSound = new Audio("data:audio/wav;base64,UklGRhAAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YRAAAAAA//+AgICAf39/f4CAgH9/f4CAgH9/f4CAgA==");
-
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      cellSize = Math.floor(Math.min(canvas.width, canvas.height) / gridSize);
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function initGame() {
-      snake = [{ x: 10, y: 10 }];
-      direction = { x: 0, y: 0 };
-      placeFood();
-      score = 0;
-      scoreDisplay.textContent = score;
-      lastUpdate = 0;
-    }
-
-    function placeFood() {
-      food = {
-        x: Math.floor(Math.random() * gridSize),
-        y: Math.floor(Math.random() * gridSize)
-      };
-    }
-
-    function updateGame() {
-      const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
-
-      // Collision
-      if (
-        head.x < 0 || head.y < 0 ||
-        head.x >= gridSize || head.y >= gridSize ||
-        snake.some(segment => segment.x === head.x && segment.y === head.y)
-      ) {
-        gameRunning = false;
-        gameOverSound.play();
-        updateHighScore();
-        alert("Game Over!");
-        return;
-      }
-
-      snake.unshift(head);
-
-      if (head.x === food.x && head.y === food.y) {
-        score++;
-        scoreDisplay.textContent = score;
-        eatSound.play();
-        placeFood();
-      } else {
-        snake.pop();
-      }
-    }
-
-    function updateHighScore() {
-      if (score > highScore) {
-        highScore = score;
-        localStorage.setItem("highScore", highScore);
-        highScoreDisplay.textContent = highScore;
-      }
-    }
-
-    function drawGame() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (let y = 0; y < gridSize; y++) {
-        for (let x = 0; x < gridSize; x++) {
-          ctx.strokeStyle = "#333";
-          ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
-        }
-      }
-
-      ctx.fillStyle = "#00f0ff";
-      for (let segment of snake) {
-        ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
-      }
-
-      ctx.fillStyle = "red";
-      ctx.fillRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
-    }
-
-    function gameLoop(timestamp) {
-      if (!lastUpdate) lastUpdate = timestamp;
-      const delta = (timestamp - lastUpdate) / 1000;
-
-      if (delta > 1 / snakeSpeed && gameRunning) {
-        updateGame();
-        lastUpdate = timestamp;
-      }
-
-      drawGame();
-      requestAnimationFrame(gameLoop);
-    }
-
-    function startGame() {
-      initGame();
-      direction = { x: 1, y: 0 };
-      gameRunning = true;
-    }
-
-    function resetGame() {
-      gameRunning = false;
-      initGame();
-      drawGame();
-    }
-
-    document.addEventListener("keydown", e => {
-      const key = e.key.toLowerCase();
-      switch (key) {
-        case "arrowup":
-        case "w": if (direction.y === 0) direction = { x: 0, y: -1 }; break;
-        case "arrowdown":
-        case "s": if (direction.y === 0) direction = { x: 0, y: 1 }; break;
-        case "arrowleft":
-        case "a": if (direction.x === 0) direction = { x: -1, y: 0 }; break;
-        case "arrowright":
-        case "d": if (direction.x === 0) direction = { x: 1, y: 0 }; break;
-      }
-    });
-
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
-    }
-
-    resetGame();
-    requestAnimationFrame(gameLoop);
-  </script>
-</body>
